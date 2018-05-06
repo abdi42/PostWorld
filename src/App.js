@@ -5,7 +5,8 @@
  */
 
 import React, { Component } from 'react';
-import Feed  from './screens/Feed.js';
+import AppNavigation from './AppNavigation.js'
+import PostStore from './stores/Posts.js';
 
 import {
   Platform,
@@ -17,8 +18,13 @@ import {
 type Props = {};
 export default class App extends Component<Props> {
   render() {
+
+    const screenProps = {
+      postStore:PostStore
+    }
+
     return (
-      <Feed></Feed>
+      <AppNavigation screenProps={screenProps}></AppNavigation>
     );
   }
 }
