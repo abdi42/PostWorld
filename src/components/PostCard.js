@@ -42,7 +42,7 @@ class PostCard extends Component {
                 vertical>
                 <Icon active name="arrow-up" style={{fontSize:35,lineHeight:0,letterSpacing:0}} />
               </TouchableOpacity>
-              <Text style={{marginRight:votesMargin}}>{post.votes}</Text>
+              <Text style={{marginRight:votesMargin}}>{post.voteCount}</Text>
               <TouchableOpacity
                 transparent
                 hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}

@@ -2,13 +2,22 @@ import {observable,action} from "mobx"
 
 class PostStore {
   @observable posts = []
+  @observable geoPosts = [
+    [-96.016434,41.248672],
+    [-96.017905,41.249654],
+    [-96.020230,41.248772]
+  ];
+
   @observable state = 'pending';
 
   fetchPosts () {
-    this.posts = [];
+    if(this.posts.length > 0){
+      return
+    }
+
     this.state = 'done';
 
-    fetch('https://f339d321.ngrok.io/api/posts')
+    fetch('http://localhost:3000/api/posts')
     .then((response) => {
       response.json().then((json) => {
         this.posts = json;
@@ -17,23 +26,46 @@ class PostStore {
     })
   }
 
-  @action addPost(post) {
+  @action addPost(post,geo = []) {
     this.posts.unshift({
       username:"johndoe",
       content:post,
       likes:0,
       distance:"Here",
       comments:[],
-      votes:0
+      votes:[],
+      voteCount:0,
+      geo:geo
     })
+
+    console.log(geo);
   }
 
   @action upVote(index){
-    this.posts[index].votes+=1;
+
+    if(this.upVoted('johndoe',this.posts[index]) == false){
+
+        this.posts[index].votes.push({
+          postId:this.posts[index],
+          username:'johndoe',
+          upVoted:true
+        })
+
+        this.posts[index].voteCount+=1;
+    }
   }
 
   @action downVote(index){
-    this.posts[index].votes-=1;
+    if(this.downVoted('johndoe',this.posts[index]) == false){
+
+        this.posts[index].votes.push({
+          postId:this.posts[index],
+          username:'johndoe',
+          upvoted:false
+        })
+
+        this.posts[index].voteCount-=1;
+    }
   }
 
   @action addComment(index,username,comment){
@@ -44,79 +76,34 @@ class PostStore {
     })
   }
 
+  getPost(index){
+    return this.posts[index];
+  }
+
+  upVoted(username,post){
+    var voted = false;
+
+    post.votes.map(vote => {
+      if(vote.username === username){
+        voted = true;
+      }
+    })
+
+    return voted;
+  }
+
+  downVoted(username,post){
+    var voted = false;
+
+    post.votes.map(vote => {
+      if(vote.username === username && !vote.upVoted){
+        voted = true;
+      }
+    })
+
+    return voted;
+  }
+
 }
 
 export default new PostStore()
-
-
-
-
-// import { types, onSnapshot } from "mobx-state-tree"
-//
-// const Comment = types.model("Comment",{
-//   username:types.string,
-//   content:types.string,
-//   votes:types.number
-// })
-//
-// const Post = types.model("Post",{
-//   username:types.string,
-//   content:types.string,
-//   likes:types.number,
-//   distance:types.string,
-//   comments:types.array(Comment),
-//   votes:types.number
-// })
-//
-// const PostStore = types.model("PostStore",{
-//   posts:types.array(Post),
-//   state:types.string
-// })
-// .actions(self => ({
-//   fetchPosts () {
-//     fetch('https://f339d321.ngrok.io/api/posts')
-//     .then(self.fetchPostsSuccess)
-//   },
-//   fetchPostsSuccess(response){
-//     response.json().then(self.parseJson)
-//   },
-//   parseJson(json){
-//     self.posts = json;
-//     self.state = 'done';
-//   },
-//   addPost(post) {
-//     self.posts.unshift({
-//       username:"johndoe",
-//       content:post,
-//       likes:0,
-//       distance:"Here",
-//       comments:[],
-//       votes:0
-//     })
-//   },
-//   upVote(index){
-//     self.posts[index].votes+=1;
-//   },
-//   downVote(index){
-//    self.posts[index].votes-=1;
-//   },
-//   addComment(index,username,comment){
-//     self.posts[index].comments.unshift({
-//       username:username,
-//       content:comment,
-//       votes:0
-//     })
-//   }
-//
-// }))
-// .views(self => ({
-//   get getPosts () {
-//     return self.posts
-//   },
-// }))
-// .create({
-//   posts:[],
-//   state:'pending'
-// })
-//
-// export default PostStore

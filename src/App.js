@@ -7,15 +7,18 @@
 import React, { Component } from 'react';
 import AppNavigation from './AppNavigation.js'
 import PostStore from './stores/Posts.js';
-
 import {
   Platform,
   StyleSheet,
   View,
-  Image
+  Image,
 } from 'react-native';
 
-type Props = {};
+
+type Props = {
+
+};
+
 export default class App extends Component<Props> {
   render() {
 
@@ -24,7 +27,7 @@ export default class App extends Component<Props> {
     }
 
     return (
-      <AppNavigation screenProps={screenProps}></AppNavigation>
+      <AppNavigation screenProps={screenProps} persistenceKey={"NavigationState"}></AppNavigation>
     );
   }
 }

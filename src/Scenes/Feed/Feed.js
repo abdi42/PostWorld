@@ -4,7 +4,8 @@ import {
   StyleSheet,
   View,
   Image,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  TouchableOpacity
 } from 'react-native';
 import { Container,List,ListItem, Header, Title, Content, Card, CardItem, Thumbnail, Text, Button, Icon, Left, Body, Right,Segment,Grid,Row,Fab } from 'native-base';
 import PostCard from '../../components/PostCard';
@@ -86,7 +87,15 @@ class Feed extends Component {
         <Body>
           <Title style={{color:"white"}}>Feed</Title>
         </Body>
-        <Right/>
+        <Right>
+          <Button
+            style={{top:2}}
+            transparent
+            onPress={() => this.props.navigation.navigate("MapStack")}
+            >
+            <Icon style={{color:'white'}}name="ios-map-outline"/>
+          </Button>
+        </Right>
       </Header>
       <Content style={styles.main}>
         {this.renderPosts()}

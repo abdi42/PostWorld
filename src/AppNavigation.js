@@ -5,6 +5,7 @@ import FeedScreen from "./Scenes/Feed/Feed.js";
 import FeedDetail from "./Scenes/Feed/FeedDetail.js";
 import SideBar from "./components/Sidebar.js";
 import {Footer,FooterTab,Button,Icon} from 'native-base';
+import Mapscreen from './Scenes/Map/Map.js';
 
 // https://github.com/react-community/react-navigation/issues/1254
 const noTransitionConfig = () => ({
@@ -33,59 +34,27 @@ const drawerButton = (navigation) =>
 
 const FeedStack = StackNavigator({
   FeedScreen: { screen: FeedScreen },
+  FeedDetail: { screen: FeedDetail },
 }, {
-  gesturesEnabled: false,
-  transitionConfig: noTransitionConfig,
   header: null,
   headerMode:'none'
 })
 
-const TabStack = TabNavigator({
-  FeedStack: FeedStack
+const MapStack = StackNavigator({
+  Mapscreen: { screen:Mapscreen }
 }, {
-  tabBarPosition: "bottom",
-  gesturesEnabled: false,
-  transitionConfig: noTransitionConfig,
-  header: null,
-  tabBarComponent: props => {
-    return (
-      <Footer>
-        <FooterTab>
-          <Button
-            vertical
-            active={props.navigationState.index === 0}
-            onPress={() => props.navigation.navigate("LucyChat")}>
-            <Icon name="bowtie" />
-            <Text>Lucy</Text>
-          </Button>
-          <Button
-            vertical
-            active={props.navigationState.index === 1}
-            onPress={() => props.navigation.navigate("JadeChat")}>
-            <Icon name="briefcase" />
-            <Text>Nine</Text>
-          </Button>
-          <Button
-            vertical
-            active={props.navigationState.index === 2}
-            onPress={() => props.navigation.navigate("NineChat")}>
-            <Icon name="headset" />
-            <Text>Jade</Text>
-          </Button>
-        </FooterTab>
-      </Footer>
-    );
-  }
+  initialRouteName:'Mapscreen',
+  header:null,
+  headerMode:'none'
 })
 
+
 // drawer stack
-const DrawerStack = StackNavigator(  {
-  TabStack: TabStack,
-  FeedDetail: { screen: FeedDetail },
+const DrawerStack = StackNavigator({
+  FeedStack: FeedStack,
+  MapStack: MapStack,
 }, {
-  gesturesEnabled: false,
   contentComponent: props => <SideBar {...props} />,
-  transitionConfig: noTransitionConfig,
   header: null,
   headerMode:'none'
 })

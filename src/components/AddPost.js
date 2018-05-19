@@ -2,6 +2,7 @@ import React, {Component} from 'react';
 import {Text, TouchableHighlight, View,StyleSheet} from 'react-native';
 import { Container, Header, Left, Body, Right, Button, Icon, Title,Content,Card,CardItem,Form,Textarea } from 'native-base';
 import Modal from "react-native-modal";
+import {Dialog} from 'react-native-ui-lib';
 
 class AddPost extends Component {
   constructor(props){
