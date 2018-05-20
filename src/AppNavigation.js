@@ -4,8 +4,9 @@ import { StackNavigator,TabNavigator, DrawerNavigator } from 'react-navigation'
 import FeedScreen from "./Scenes/Feed/Feed.js";
 import FeedDetail from "./Scenes/Feed/FeedDetail.js";
 import SideBar from "./components/Sidebar.js";
-import {Footer,FooterTab,Button,Icon} from 'native-base';
 import Mapscreen from './Scenes/Map/Map.js';
+import Tabs from "./components/Tabs.js"
+import FeedNav from "./Scenes/Feed/"
 
 // https://github.com/react-community/react-navigation/issues/1254
 const noTransitionConfig = () => ({
@@ -14,30 +15,6 @@ const noTransitionConfig = () => ({
     timing: Animated.timing,
     easing: Easing.step0
   }
-})
-
-
-const drawerButton = (navigation) =>
-  <Text
-    style={{padding: 5, color: 'white'}}
-    onPress={() => {
-      // Coming soon: navigation.navigate('DrawerToggle')
-      // https://github.com/react-community/react-navigation/pull/2492
-      if (navigation.state.index === 0) {
-        navigation.navigate('DrawerOpen')
-      } else {
-        navigation.navigate('DrawerClose')
-      }
-    }
-  }>Menu</Text>
-
-
-const FeedStack = StackNavigator({
-  FeedScreen: { screen: FeedScreen },
-  FeedDetail: { screen: FeedDetail },
-}, {
-  header: null,
-  headerMode:'none'
 })
 
 const MapStack = StackNavigator({
@@ -51,10 +28,9 @@ const MapStack = StackNavigator({
 
 // drawer stack
 const DrawerStack = StackNavigator({
-  FeedStack: FeedStack,
+  TabsNav: FeedNav,
   MapStack: MapStack,
 }, {
-  contentComponent: props => <SideBar {...props} />,
   header: null,
   headerMode:'none'
 })

@@ -14,6 +14,9 @@ import KeyboardSpacer from 'react-native-keyboard-spacer';
 import CommentCard from '../../components/CommentCard';
 
 class FeedDetail extends Component {
+  static navigationOptions = {
+    tabBarVisible:false
+  };
   constructor(props){
     super(props);
     this.state ={ comment:''}

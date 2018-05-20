@@ -3,6 +3,7 @@ import {Text, TouchableHighlight, View,StyleSheet} from 'react-native';
 import { Container, Header, Left, Body, Right, Button, Icon, Title,Content,Card,CardItem,Form,Textarea } from 'native-base';
 import Modal from "react-native-modal";
 import {Dialog} from 'react-native-ui-lib';
+import { NavigationActions } from 'react-navigation'
 
 class AddPost extends Component {
   constructor(props){
@@ -15,8 +16,14 @@ class AddPost extends Component {
   }
 
   submit(){
-    this.props.onSubmit(this.state.content)
-    this.setModalVisible(false);
+    const backAction = NavigationActions.back({
+      key: null
+    })
+
+    const {postStore} = this.props.screenProps;
+    postStore.addPost(content);
+
+    this.props.navigation.dispatch(backAction)
   }
 
   render() {
@@ -24,9 +31,8 @@ class AddPost extends Component {
       <Modal
         hideModalContentWhileAnimating={true}
         animationType="slide"
-        isVisible={this.state.modalVisible}
-        style={{margin:0,padding:0}}
-        transparent={false}>
+        isVisible={true}
+        style={{margin:0,padding:0}}>
         <Header noShadow style={{borderBottomWidth:0,backgroundColor:"#4F6EFD"}}>
           <Right>
             <Button

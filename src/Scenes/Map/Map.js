@@ -7,6 +7,7 @@ import Modal from "react-native-modal";
 import AddPost from '../../components/AddPost'
 import PostModal from '../../components/PostModal'
 import {observable} from "mobx"
+import { NavigationActions } from 'react-navigation'
 
 Mapbox.setAccessToken('pk.eyJ1IjoiYWJkaTA5ODciLCJhIjoiY2pkaWFhaTgzMTcyZjJ3bjkwcDVmc3NnOCJ9.LtY3fCxcNNuuGQHXgsl6aA');
 
@@ -105,6 +106,9 @@ class Mapscreen extends Component {
   render() {
     const { postStore } = this.props.screenProps;
     const {posts} = postStore;
+    const backAction = NavigationActions.back({
+      key: null
+    })
 
     return (
       <View style={styles.container}>
@@ -119,7 +123,7 @@ class Mapscreen extends Component {
             onDidFinishLoadingMap={() => this.setState({finishedLoadingMap:true})}
             >
             <Row>
-              <TouchableOpacity style={{top:30,left:30}} onPress={() => this.props.navigation.navigate("FeedStack")}>
+              <TouchableOpacity style={{top:30,left:30}} onPress={() => this.props.navigation.dispatch(backAction)}>
                 <Icon style={{color:'white',fontSize:35}}name="ios-arrow-back"/>
               </TouchableOpacity>
             </Row>

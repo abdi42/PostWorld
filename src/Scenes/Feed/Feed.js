@@ -74,16 +74,8 @@ class Feed extends Component {
 
     return (
     <Container>
-      <AddPost ref='modal' postStore={postStore} onSubmit={this.addPost.bind(this)}></AddPost>
       <Header style={{backgroundColor:"#343434"}} hasTabs>
-        <Left>
-          <Button
-            transparent
-            onPress={() => this.props.navigation.navigate("DrawerOpen")}
-            >
-            <Icon name="menu"  style={{color:"white"}}/>
-          </Button>
-        </Left>
+        <Left/>
         <Body>
           <Title style={{color:"white"}}>Feed</Title>
         </Body>
@@ -100,14 +92,6 @@ class Feed extends Component {
       <Content style={styles.main}>
         {this.renderPosts()}
       </Content>
-      <Fab large
-        position="bottomRight"
-        containerStyle={{left: '42%'}}
-        style={{backgroundColor:"#3270CE",width:75,height:75,borderRadius:100}}
-        onPress={() => this.showModal()}
-      >
-        <Icon name="md-create"/>
-      </Fab>
     </Container>
   )
   }
