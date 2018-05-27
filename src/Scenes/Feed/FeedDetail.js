@@ -4,7 +4,7 @@ import {
   StyleSheet,
   View,
   Image,
-  ScrollView,
+  FlatList,
   TouchableOpacity,
   Keyboard
 } from 'react-native';
@@ -12,27 +12,42 @@ import { Container,List,ListItem, Header, Title, Content, Card, CardItem, Thumbn
 import PostCard from '../../components/PostCard'
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import CommentCard from '../../components/CommentCard';
+import { observer } from 'mobx-react';
+
+const OCommentCard = observer(CommentCard);
+const OPostCard = observer(PostCard);
 
 class FeedDetail extends Component {
-  static navigationOptions = {
-    tabBarVisible:false
-  };
+
   constructor(props){
     super(props);
     this.state ={ comment:''}
   }
 
-  renderComments(comments){
+  _header(){
+    const { params } = this.props.navigation.state;
+    const { postStore } = this.props.screenProps
+    const post = params.post
+
     return (
-      <Card>
-        {
-          comments.map((comment,index) => {
-            return (
-                <CommentCard key={index} comment={comment}></CommentCard>
-            );
-          })
-        }
-      </Card>
+      <View>
+        <OPostCard
+          post={post}
+          goToGeo={() => this.props.navigation.navigate("MapScreen",{geo:post.geo})}
+          onUpVote={() => postStore.upVote(params.index)}
+          onDownVote={() => postStore.downVote(params.index)}></OPostCard>
+      </View>
+    )
+  }
+  _renderComment = ({item,index}) => {
+    const { params } = this.props.navigation.state;
+    const { postStore } = this.props.screenProps
+
+    return (
+      <OCommentCard
+        comment={item}
+        onUpVote={() => postStore.upVoteComment(params.index,index)}
+        onDownVote={() => postStore.downVoteComment(params.index,index)}></OCommentCard>
     )
   }
 
@@ -53,21 +68,20 @@ class FeedDetail extends Component {
 
   render(){
     const uri = "https://facebook.github.io/react-native/docs/assets/favicon.png";
-    const { goBack } = this.props.navigation;
     const { params } = this.props.navigation.state;
     const { postStore } = this.props
     const post = params.post
     const index = params.index;
 
     return (
-      <Container style={{backgroundColor:"#343434"}}>
-        <Header style={{backgroundColor:"#343434"}} hasTabs>
+      <Container style={{backgroundColor:"#E7ECF0"}}>
+        <Header style={{backgroundColor:"#2ecc71"}} hasTabs>
           <Left>
             <Button
               transparent
-              onPress={() => goBack()}
+              onPress={() => this.props.navigation.goBack()}
               >
-              <Icon name="arrow-back"  style={{color:"white"}}/>
+              <Icon name="arrow-back" style={{color:"white"}} />
             </Button>
           </Left>
           <Body>
@@ -75,12 +89,14 @@ class FeedDetail extends Component {
           </Body>
           <Right/>
         </Header>
-        <ScrollView>
-          <PostCard post={post} style={{padding:0,margin:0}}></PostCard>
-          {this.renderComments(post.comments)}
-        </ScrollView>
+        <FlatList
+          data={post.comments}
+          renderItem={this._renderComment.bind(this)}
+          initialNumToRender={4}
+          ListHeaderComponent={this._header.bind(this)}
+          />
         <Footer>
-          <FooterTab style={{backgroundColor:"#D3D2D3"}}>
+          <FooterTab style={{backgroundColor:"#E7ECF0"}}>
             <Input style={{backgroundColor:'white',borderRadius:5,marginLeft:15,marginTop:7,marginRight:25,height:40}}  ref={component => this._textInput = component} placeholder='Add a comment' value={this.state.comment} onSubmitEditing={() => this.addComment(index)}  onChangeText={(comment) => this.setState({comment})}/>
             <TouchableOpacity
               transparent

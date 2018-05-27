@@ -17,7 +17,7 @@ class PostStore {
 
     this.state = 'done';
 
-    fetch('http://localhost:3000/api/posts')
+    fetch('https://2c7d2b37.ngrok.io/api/posts')
     .then((response) => {
       response.json().then((json) => {
         this.posts = json;
@@ -37,34 +37,47 @@ class PostStore {
       voteCount:0,
       geo:geo
     })
-
-    console.log(geo);
   }
 
   @action upVote(index){
+    if(this.posts[index].userVoted == null || this.posts[index].userVoted != "up"){
+      this.posts[index].votes.push({
+        postId:this.posts[index],
+        username:'johndoe',
+        upVoted:true,
+      })
 
-    if(this.upVoted('johndoe',this.posts[index]) == false){
+      this.posts[index].userVoted = "up"
 
-        this.posts[index].votes.push({
-          postId:this.posts[index],
-          username:'johndoe',
-          upVoted:true
-        })
+      this.posts[index].voteCount+=1;
+    }
+  }
 
-        this.posts[index].voteCount+=1;
+  @action upVoteComment(index,commentIndex){
+    if(this.posts[index].comments[commentIndex].userVoted == null || this.posts[index].comments[commentIndex].userVoted != "up"){
+      this.posts[index].comments[commentIndex].userVoted = "up"
+      this.posts[index].comments[commentIndex].votes+=1;
+    }
+  }
+
+  @action downVoteComment(index,commentIndex){
+    if(this.posts[index].comments[commentIndex].userVoted == null || this.posts[index].comments[commentIndex].userVoted != "down"){
+      this.posts[index].comments[commentIndex].userVoted = "down"
+      this.posts[index].comments[commentIndex].votes-=1;
     }
   }
 
   @action downVote(index){
-    if(this.downVoted('johndoe',this.posts[index]) == false){
+    if(this.posts[index].userVoted == null || this.posts[index].userVoted != "down"){
+      this.posts[index].votes.push({
+        postId:this.posts[index],
+        username:'johndoe',
+        upVoted:true,
+      })
 
-        this.posts[index].votes.push({
-          postId:this.posts[index],
-          username:'johndoe',
-          upvoted:false
-        })
+      this.posts[index].userVoted = "down"
 
-        this.posts[index].voteCount-=1;
+      this.posts[index].voteCount-=1;
     }
   }
 

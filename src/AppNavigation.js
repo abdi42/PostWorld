@@ -1,42 +1,48 @@
 import React from 'react'
 import { Animated, Easing,Text } from 'react-native'
-import { StackNavigator,TabNavigator, DrawerNavigator } from 'react-navigation'
+import { StackNavigator,TabNavigator } from 'react-navigation'
+import CardStackStyleInterpolator from 'react-navigation/src/views/CardStack/CardStackStyleInterpolator';
+
+import MapScreen from './Scenes/Map/Map.js';
 import FeedScreen from "./Scenes/Feed/Feed.js";
 import FeedDetail from "./Scenes/Feed/FeedDetail.js";
-import SideBar from "./components/Sidebar.js";
-import Mapscreen from './Scenes/Map/Map.js';
 import Tabs from "./components/Tabs.js"
-import FeedNav from "./Scenes/Feed/"
+import AddPost from "./Scenes/AddPost"
+import SamplePage from "./Scenes/Map/SamplePage"
 
-// https://github.com/react-community/react-navigation/issues/1254
-const noTransitionConfig = () => ({
-  transitionSpec: {
-    duration: 0,
-    timing: Animated.timing,
-    easing: Easing.step0
-  }
+const FeedNav = TabNavigator({
+  FeedScreen: { screen: FeedScreen },
+  SamplePage: { screen:SamplePage },
+},{
+   tabBarPosition: "bottom",
+   animationEnabled:true,
+   tabBarComponent: props => <Tabs {...props}/>
 })
 
-const MapStack = StackNavigator({
-  Mapscreen: { screen:Mapscreen }
-}, {
-  initialRouteName:'Mapscreen',
-  header:null,
-  headerMode:'none'
-})
-
-
-// drawer stack
-const DrawerStack = StackNavigator({
+const MainStack = StackNavigator({
   TabsNav: FeedNav,
-  MapStack: MapStack,
+  FeedDetail: { screen: FeedDetail },
+  MapScreen: { screen: MapScreen}
 }, {
   header: null,
-  headerMode:'none'
+  headerMode:'none',
 })
 
 
+const RootStack = StackNavigator(
+  {
+    Main: {
+      screen: MainStack,
+    },
+    AddPost: {
+      screen: AddPost,
+    },
+  },
+  {
+    mode: 'modal',
+    headerMode: 'none',
+  }
+);
 
 
-
-export default DrawerStack
+export default RootStack

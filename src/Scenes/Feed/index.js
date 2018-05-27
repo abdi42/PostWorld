@@ -3,8 +3,6 @@ import { StackNavigator,TabNavigator } from 'react-navigation'
 import FeedScreen from "./Feed.js";
 import FeedDetail from "./FeedDetail.js";
 import Tabs from "../../components/Tabs.js"
-import AddPost from '../../components/AddPost'
-
 
 
 const Feed = StackNavigator({
@@ -15,21 +13,13 @@ const Feed = StackNavigator({
   headerMode:'none'
 })
 
-const FeedStack = StackNavigator({
-  Feed:Feed,
-  AddPost:AddPost,
-},{
-  mode:'modal',
-  headerMode:'none'
-})
-
 
 const FeedNav = TabNavigator({
-  Feed:FeedStack
+  Feed:Feed
 },{
    tabBarPosition: "bottom",
    animationEnabled:true,
-   tabBarComponent: props => <Tabs addPost={() => { console.log("Add Post")}} navigation={props.navigation} navigationState={props.navigationState}/>
+   tabBarComponent: props => <Tabs {...props}/>
 })
 
 export default FeedNav;

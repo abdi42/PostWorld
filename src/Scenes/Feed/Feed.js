@@ -4,6 +4,7 @@ import {
   StyleSheet,
   View,
   Image,
+  FlatList,
   TouchableWithoutFeedback,
   TouchableOpacity
 } from 'react-native';
@@ -11,7 +12,6 @@ import { Container,List,ListItem, Header, Title, Content, Card, CardItem, Thumbn
 import PostCard from '../../components/PostCard';
 import PostStore from '../../stores/Posts.js';
 import { observer } from 'mobx-react';
-import AddPost from '../../components/AddPost'
 
 const OPostCard = observer(PostCard);
 
@@ -21,11 +21,22 @@ class Feed extends Component {
 
   constructor(props){
     super(props);
-    this.state ={ isLoading: true}
+    this.state ={ isLoading: true,seg:1,latitude:0,longitude:0}
 
   }
 
   componentDidMount(){
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.setState({
+          latitude: parseFloat(position.coords.latitude),
+          longitude: parseFloat(position.coords.longitude),
+          error: null,
+        });
+      },
+      (error) => this.setState({ error: error.message }),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
+    );
     this.props.screenProps.postStore.fetchPosts();
   }
 
@@ -34,63 +45,75 @@ class Feed extends Component {
   }
 
   addPost(content){
-    console.log(this.props)
     const {postStore} = this.props.screenProps;
     postStore.addPost(content);
   }
 
-  renderPosts() {
+  _renderPosts= ({item,index}) => {
     const {postStore} = this.props.screenProps;
-    const {posts} = postStore;
+    const post = item;
 
-    if(postStore.state == 'done'){
-      return (
-        <List>
-          {
-            posts.map((post,index) => {
-              return (
-                <TouchableWithoutFeedback
-                  key={index}
-                  onPress={() => this.props.navigation.navigate("FeedDetail",{post:post,index:index})}
-                  >
-                  <ListItem noBorder>
-                    <OPostCard
-                      post={post}
-                      onUpVote={() => postStore.upVote(index)}
-                      onDownVote={() => postStore.downVote(index)}></OPostCard>
-                  </ListItem>
-                </TouchableWithoutFeedback>
-              );
-            })
-          }
-        </List>
-      )
-    }
-
-    return <List noBorder>{posts}</List>
+    return (
+      <TouchableWithoutFeedback
+        key={index}
+        onPress={() => this.props.navigation.navigate("FeedDetail",{post:post,index:index})}
+        >
+        <ListItem noBorder>
+          <OPostCard
+            post={post}
+            goToGeo={() => this.props.navigation.navigate("MapScreen",{geo:post.geo})}
+            onUpVote={() => postStore.upVote(index)}
+            onDownVote={() => postStore.downVote(index)}></OPostCard>
+        </ListItem>
+      </TouchableWithoutFeedback>
+    )
   }
+
+  goToMap(){
+    this.props.navigation.navigate("MapScreen",{geo:[this.state.longitude,this.state.latitude]});
+  }
+
   render(){
     const { postStore } = this.props.screenProps
 
     return (
     <Container>
-      <Header style={{backgroundColor:"#343434"}} hasTabs>
+      <Header style={{backgroundColor:"#2ecc71"}} hasTabs rounded>
         <Left/>
         <Body>
-          <Title style={{color:"white"}}>Feed</Title>
+          <Segment style={{backgroundColor:"#2ecc71"}}>
+            <Button
+              first
+              style={{backgroundColor: this.state.seg === 1 ? "white" : "#2ecc71",borderColor: "white"}}
+              active={this.state.seg === 1 ? true : false}
+              small
+              onPress={() => this.setState({ seg: 1 })}
+              ><Text style={{color: this.state.seg === 1 ? "#2ecc71" : "white"}}>Hot</Text></Button>
+            <Button
+              last
+              style={{backgroundColor: this.state.seg === 2 ? "white" : "#2ecc71",borderColor: "white"}}
+              active={this.state.seg === 2 ? true : false}
+              small
+              onPress={() => this.setState({ seg: 2 })}
+              ><Text style={{color: this.state.seg === 2 ? "#2ecc71" : "white"}}>New</Text></Button>
+          </Segment>
         </Body>
         <Right>
           <Button
-            style={{top:2}}
             transparent
-            onPress={() => this.props.navigation.navigate("MapStack")}
+            onPress={() => this.goToMap()}
             >
             <Icon style={{color:'white'}}name="ios-map-outline"/>
           </Button>
         </Right>
       </Header>
       <Content style={styles.main}>
-        {this.renderPosts()}
+        if(postStore.state == "Done"){
+          <FlatList
+            data={postStore.posts}
+            renderItem={this._renderPosts}
+            initialNumToRender={4}/>
+        }
       </Content>
     </Container>
   )
@@ -99,7 +122,7 @@ class Feed extends Component {
 
 const styles = StyleSheet.create({
   main:{
-    backgroundColor:"#343434"
+    backgroundColor:"#E7ECF0"
   }
 })
 
