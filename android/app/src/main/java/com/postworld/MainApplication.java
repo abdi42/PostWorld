@@ -3,6 +3,10 @@ package com.postworld;
 import android.app.Application;
 
 import com.facebook.react.ReactApplication;
+import com.imagepicker.ImagePickerPackage;
+import com.horcrux.svg.SvgPackage;
+import com.mapbox.reactnativemapboxgl.ReactNativeMapboxGLPackage;
+import com.mapbox.rctmgl.RCTMGLPackage;
 import com.oblador.vectoricons.VectorIconsPackage;
 import com.facebook.react.ReactNativeHost;
 import com.facebook.react.ReactPackage;
@@ -24,6 +28,10 @@ public class MainApplication extends Application implements ReactApplication {
     protected List<ReactPackage> getPackages() {
       return Arrays.<ReactPackage>asList(
           new MainReactPackage(),
+            new ImagePickerPackage(),
+            new SvgPackage(),
+            new ReactNativeMapboxGLPackage(),
+            new RCTMGLPackage(),
             new VectorIconsPackage()
       );
     }
