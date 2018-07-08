@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {Text, TouchableHighlight,TouchableOpacity, View,StyleSheet} from 'react-native';
+import {Text, TouchableHighlight,TouchableOpacity, View,StyleSheet,AsyncStorage} from 'react-native';
 import { Container, Header, Left, Body, Right,Row,Button, Icon, Title,Content,Card,CardItem,Form,Textarea,Thumbnail } from 'native-base';
 import Modal from "react-native-modal";
 import PostCard from "./PostModal";
@@ -22,41 +22,48 @@ class PostModal extends Component {
   render() {
     const uri = "https://facebook.github.io/react-native/docs/assets/favicon.png";
 
+
     return (
-      <Modal
-        hideModalContentWhileAnimating={true}
-        animationType="slide"
-        isVisible={this.props.visible}
-        style={{top:50}}
-        transparent={true}
-        backdropOpacity={0}>
-        <Container>
-          <Content contentContainerStyle={styles.modalContent}>
-            <Row>
-              <Right>
-                <Button
-                  onPress={() => this.props.closePost()}
-                  transparent>
-                  <Icon name="md-close" style={{color:"white"}}></Icon>
-                </Button>
-              </Right>
-            </Row>
-            {this.props.children}
-          </Content>
-        </Container>
-      </Modal>
+      <View>
+        <Modal
+          animationType="slide"
+          animationOut="slideOutDown"
+          isVisible={this.props.visible}
+          style={[styles.modal,this.props.style]}
+          backdropOpacity={this.props.opacity}
+          backdropColor="#4F6EFD"
+          transparent={true}>
+          <Container>
+            <Content contentContainerStyle={styles.modalContent}>
+              <Row>
+                <Right>
+                  <Button
+                    onPress={() => this.props.closePost()}
+                    transparent>
+                    <Icon name="md-close" style={{color:"#fff"}}></Icon>
+                  </Button>
+                </Right>
+              </Row>
+              {this.props.children}
+            </Content>
+          </Container>
+        </Modal>
+      </View>
     );
   }
 }
 
 const styles = StyleSheet.create({
+  modal:{
+    top:10,
+    flex:1,
+    margin:10,
+  },
   modalContent: {
-    backgroundColor: '#4F6EFD',
-    padding:10,
     borderRadius:10,
-    marginTop:15,
-    marginLeft:10,
-    marginRight:10
+    backgroundColor:"#4F6EFD",
+    padding:10,
+    paddingBottom:25
   },
 })
 

@@ -2,7 +2,6 @@ import React, {Component} from 'react';
 import {Text, TouchableHighlight, View,StyleSheet} from 'react-native';
 import { Container, Header, Left, Body, Right, Button, Icon, Title,Content,Card,CardItem,Form,Textarea } from 'native-base';
 import Modal from "react-native-modal";
-import {Dialog} from 'react-native-ui-lib';
 
 class AddPostModal extends Component {
   constructor(props){
@@ -22,7 +21,6 @@ class AddPostModal extends Component {
       (error) => this.setState({ error: error.message }),
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
     );
-    this.props.screenProps.postStore.fetchPosts();
   }
 
 
@@ -32,6 +30,7 @@ class AddPostModal extends Component {
 
   submit(){
     this.props.onSubmit(this.state.content)
+
     this.setModalVisible(false);
   }
 
