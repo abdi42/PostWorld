@@ -1,4 +1,3 @@
-import {observable,action} from "mobx"
 
 class PostStore {
   @observable posts = []
@@ -17,7 +16,7 @@ class PostStore {
 
     this.state = 'done';
 
-    fetch('https://2c7d2b37.ngrok.io/api/posts')
+    fetch('https://faker-abdi42.c9users.io/api/posts')
     .then((response) => {
       response.json().then((json) => {
         this.posts = json;
