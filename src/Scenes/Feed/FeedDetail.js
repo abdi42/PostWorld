@@ -6,16 +6,17 @@ import {
   Image,
   FlatList,
   TouchableOpacity,
-  Keyboard
+  Keyboard,
+  AsyncStorage
 } from 'react-native';
 import { Container,List,ListItem, Header, Title, Content, Card, CardItem, Thumbnail, Text, Button, Icon, Left, Body, Right,Footer,FooterTab,Form,Item,Input} from 'native-base';
 import PostCard from '../../components/PostCard'
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import CommentCard from '../../components/CommentCard';
-import { observer } from 'mobx-react';
-
-const OCommentCard = observer(CommentCard);
-const OPostCard = observer(PostCard);
+import { connect } from 'react-redux';
+import { addComment,commentVote,getPost } from '../../actions/postActions'
+import { NavigationActions } from 'react-navigation';
+import Post from '../../components/Post'
 
 class FeedDetail extends Component {
 
@@ -24,58 +25,99 @@ class FeedDetail extends Component {
     this.state ={ comment:''}
   }
 
+  componentWillMount(){
+    const setParamsAction = NavigationActions.setParams({
+      params: {hideTabBar: true}
+    });
+    this.props.navigation.dispatch(setParamsAction);
+  }
+
+  componentWillReceiveProps(nextProps){
+    if(nextProps.post){
+      this.props.post.comments = nextProps.post.comments
+    }
+  }
+
+  componentWillMount(){
+    const { params } = this.props.navigation.state;
+    this.props.getPost(params.postId)
+  }
+
+  renderPost(){
+    if(this.props.post.id){
+      return (
+        <FlatList
+          data={this.props.post.comments}
+          renderItem={this._renderComment.bind(this)}
+          initialNumToRender={4}
+          ListHeaderComponent={this._header.bind(this)}
+          />
+      )
+    }
+  }
+
+
   _header(){
     const { params } = this.props.navigation.state;
-    const { postStore } = this.props.screenProps
     const post = params.post
 
     return (
-      <View>
-        <OPostCard
-          post={post}
-          goToGeo={() => this.props.navigation.navigate("MapScreen",{geo:post.geo})}
-          onUpVote={() => postStore.upVote(params.index)}
-          onDownVote={() => postStore.downVote(params.index)}></OPostCard>
+      <View style={{backgroundColor:"#E7ECF0",paddingBottom:5}}>
+        <Post post={this.props.post} navigation={this.props.navigation} style={{}}></Post>
       </View>
     )
   }
+
+  commentVote(post,dir,item){
+    AsyncStorage.getItem('userToken',(err,result) => {
+      if(result == null){
+        this.props.navigation.navigate("Prompt")
+      } else {
+        this.props.commentVote(post,dir,item)
+      }
+    })
+  }
+
   _renderComment = ({item,index}) => {
     const { params } = this.props.navigation.state;
-    const { postStore } = this.props.screenProps
+    const post = params.post
 
     return (
-      <OCommentCard
+      <CommentCard
         comment={item}
-        onUpVote={() => postStore.upVoteComment(params.index,index)}
-        onDownVote={() => postStore.downVoteComment(params.index,index)}></OCommentCard>
+        onUpVote={() => this.commentVote(post,"up",item)}
+        onDownVote={() => this.commentVote(post,"down",item)}></CommentCard>
     )
   }
 
   addComment(index){
-    const comment = this.state.comment;
-    const {postStore} = this.props.screenProps;
+    AsyncStorage.getItem('userToken',(err,result) => {
+      if(result == null){
+        this.props.navigation.navigate("Prompt")
+      } else {
+        const { params } = this.props.navigation.state;
+        const post = params.post
 
-    postStore.addComment(index,"John Doe",comment);
+        const comment = this.state.comment;
 
-    this.setState({
-      comment:""
+        this.props.addComment("John Doe",comment,post)
+
+        this._textInput.setNativeProps({text: ''});
+
+        Keyboard.dismiss();
+      }
     })
-
-    this._textInput.setNativeProps({text: ''});
-
-    Keyboard.dismiss();
   }
 
   render(){
     const uri = "https://facebook.github.io/react-native/docs/assets/favicon.png";
     const { params } = this.props.navigation.state;
-    const { postStore } = this.props
     const post = params.post
     const index = params.index;
 
     return (
       <Container style={{backgroundColor:"#E7ECF0"}}>
-        <Header style={{backgroundColor:"#2ecc71"}} hasTabs>
+        <Header style={{backgroundColor:"#617AF5"}} hasTabs>
           <Left>
             <Button
               transparent
@@ -89,12 +131,9 @@ class FeedDetail extends Component {
           </Body>
           <Right/>
         </Header>
-        <FlatList
-          data={post.comments}
-          renderItem={this._renderComment.bind(this)}
-          initialNumToRender={4}
-          ListHeaderComponent={this._header.bind(this)}
-          />
+        <Content style={{backgroundColor:"#fff"}}>
+          {this.renderPost()}
+        </Content>
         <Footer>
           <FooterTab style={{backgroundColor:"#E7ECF0"}}>
             <Input style={{backgroundColor:'white',borderRadius:5,marginLeft:15,marginTop:7,marginRight:25,height:40}}  ref={component => this._textInput = component} placeholder='Add a comment' value={this.state.comment} onSubmitEditing={() => this.addComment(index)}  onChangeText={(comment) => this.setState({comment})}/>
@@ -113,4 +152,8 @@ class FeedDetail extends Component {
   }
 }
 
-export default FeedDetail;
+const mapStateToProps = state => ({
+  post: state.posts.item
+})
+
+export default connect(mapStateToProps, { addComment,commentVote,getPost })(FeedDetail)

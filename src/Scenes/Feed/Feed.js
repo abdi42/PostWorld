@@ -3,117 +3,106 @@ import {
   Platform,
   StyleSheet,
   View,
-  Image,
-  FlatList,
   TouchableWithoutFeedback,
-  TouchableOpacity
+  FlatList,
+  TouchableOpacity,
+  Dimensions
 } from 'react-native';
-import { Container,List,ListItem, Header, Title, Content, Card, CardItem, Thumbnail, Text, Button, Icon, Left, Body, Right,Segment,Grid,Row,Fab } from 'native-base';
-import PostCard from '../../components/PostCard';
-import PostStore from '../../stores/Posts.js';
-import { observer } from 'mobx-react';
+import { Container,List,ListItem, Header, Title, Content, Card, CardItem, Thumbnail, Text, Button, Icon, Left, Body, Right,Segment,Grid,Row,Fab,Spinner } from 'native-base';
+import FeedView from '../../components/FeedView'
+import { connect } from 'react-redux';
+import { fetchPosts } from '../../actions/postActions'
+import Post from '../../components/Post';
+import Modal from '../../components/Modal'
+const {height: screenHeight} = Dimensions.get('window');
 
-const OPostCard = observer(PostCard);
-
-@observer
 class Feed extends Component {
 
 
   constructor(props){
     super(props);
-    this.state ={ isLoading: true,seg:1,latitude:0,longitude:0}
+    this.state ={
+      isLoading: true,seg:1,latitude:0,longitude:0,
+      data:[]
+    }
 
   }
 
-  componentDidMount(){
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        this.setState({
-          latitude: parseFloat(position.coords.latitude),
-          longitude: parseFloat(position.coords.longitude),
-          error: null,
-        });
-      },
-      (error) => this.setState({ error: error.message }),
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
-    );
-    this.props.screenProps.postStore.fetchPosts();
+  componentWillMount(){
+    this.props.fetchPosts();
   }
 
-  showModal(){
-    this.refs.modal.setModalVisible(true);
+  goToMap(){
+    this.props.navigation.navigate("MapScreen",{});
   }
 
-  addPost(content){
-    const {postStore} = this.props.screenProps;
-    postStore.addPost(content);
-  }
+  _keyExtractor = (item, index) => item.id;
 
-  _renderPosts= ({item,index}) => {
-    const {postStore} = this.props.screenProps;
-    const post = item;
 
+  _renderPosts= (data) => {
+    const post = data.item;
     return (
       <TouchableWithoutFeedback
-        key={index}
-        onPress={() => this.props.navigation.navigate("FeedDetail",{post:post,index:index})}
-        >
-        <ListItem noBorder>
-          <OPostCard
-            post={post}
-            goToGeo={() => this.props.navigation.navigate("MapScreen",{geo:post.geo})}
-            onUpVote={() => postStore.upVote(index)}
-            onDownVote={() => postStore.downVote(index)}></OPostCard>
-        </ListItem>
+        key={data.index}
+        onPress={() => this.props.navigation.navigate("FeedDetail",{post:post,index:data.index,postId:post.id})}>
+        <View style={{margin:0}}>
+          <Post post={post} navigation={this.props.navigation} style={{margin:0}}>
+          </Post>
+        </View>
       </TouchableWithoutFeedback>
     )
   }
 
-  goToMap(){
-    this.props.navigation.navigate("MapScreen",{geo:[this.state.longitude,this.state.latitude]});
-  }
 
   render(){
-    const { postStore } = this.props.screenProps
+
+    let feedView =  (
+      <View style={styles.body}>
+        <Spinner color='black' />
+      </View>
+    )
+    if(this.props.posts.length > 0){
+      feedView =  (
+        <FlatList
+          style={styles.main}
+          data={this.props.posts}
+          renderItem={this._renderPosts.bind(this)}
+          >
+        </FlatList>
+      )
+    }
 
     return (
     <Container>
-      <Header style={{backgroundColor:"#2ecc71"}} hasTabs rounded>
+      <Header style={{backgroundColor:"#FAFAFA"}} hasTabs rounded>
         <Left/>
-        <Body>
-          <Segment style={{backgroundColor:"#2ecc71"}}>
+          <Segment style={{backgroundColor:"#FAFAFA"}}>
             <Button
               first
-              style={{backgroundColor: this.state.seg === 1 ? "white" : "#2ecc71",borderColor: "white"}}
+              style={{backgroundColor: this.state.seg === 1 ? "#617AF5" : "white",borderColor: "black",borderTopLeftRadius:0,borderBottomLeftRadius:0}}
               active={this.state.seg === 1 ? true : false}
               small
               onPress={() => this.setState({ seg: 1 })}
-              ><Text style={{color: this.state.seg === 1 ? "#2ecc71" : "white"}}>Hot</Text></Button>
+              ><Text style={{color: this.state.seg === 1 ? "white" : "black"}}>Hot</Text></Button>
             <Button
               last
-              style={{backgroundColor: this.state.seg === 2 ? "white" : "#2ecc71",borderColor: "white"}}
+              style={{backgroundColor: this.state.seg === 2 ? "#617AF5" : "white",borderColor: "black",borderTopRightRadius:0,borderBottomRightRadius:0}}
               active={this.state.seg === 2 ? true : false}
               small
               onPress={() => this.setState({ seg: 2 })}
-              ><Text style={{color: this.state.seg === 2 ? "#2ecc71" : "white"}}>New</Text></Button>
+              ><Text style={{color: this.state.seg === 2 ? "white" : "black"}}>New</Text></Button>
           </Segment>
-        </Body>
         <Right>
           <Button
             transparent
             onPress={() => this.goToMap()}
             >
-            <Icon style={{color:'white'}}name="ios-map-outline"/>
+            <Icon style={{color:'#617AF5'}}name="ios-map-outline"/>
           </Button>
         </Right>
       </Header>
-      <Content style={styles.main}>
-        if(postStore.state == "Done"){
-          <FlatList
-            data={postStore.posts}
-            renderItem={this._renderPosts}
-            initialNumToRender={4}/>
-        }
+      <Content style={{backgroundColor:"#FAFAFA"}}>
+        {feedView}
       </Content>
     </Container>
   )
@@ -122,8 +111,26 @@ class Feed extends Component {
 
 const styles = StyleSheet.create({
   main:{
-    backgroundColor:"#E7ECF0"
+
+  },
+  body: {
+    flex:1,
+    height: screenHeight/2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding:25,
+    paddingTop:25
   }
 })
 
-export default Feed;
+const mapStateToProps = state => {
+  let storedPosts = state.posts.items.map(post => ({key:post.id, ...post}))
+  return {
+    posts: storedPosts,
+    newPost:state.posts.item
+  }
+}
+
+export default connect(mapStateToProps, { fetchPosts })(Feed);
+
+/*        <FeedView postStore={postStore} posts={this.props.posts} navigate={this.props.navigation.navigate}></FeedView> */
