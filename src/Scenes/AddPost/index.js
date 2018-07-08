@@ -2,6 +2,8 @@ import React, {Component} from 'react';
 import {Text, TouchableHighlight, View,StyleSheet} from 'react-native';
 import { Container, Header, Left, Body, Right, Button, Icon, Title,Content,Card,CardItem,Form,Textarea } from 'native-base';
 import Modal from "react-native-modal";
+import { connect } from 'react-redux';
+import { createPost } from '../../actions/postActions'
 
 class AddPost extends Component {
   constructor(props){
@@ -11,12 +13,11 @@ class AddPost extends Component {
 
   submit(){
     const { params } = this.props.navigation.state;
-    const {postStore} = this.props.screenProps;
 
     if(params.geo)
-      postStore.addPost(this.state.content,params.geo);
+      this.props.createPost(this.state.content,params.geo)
     else
-      postStore.addPost(this.state.content);
+      this.props.createPost(this.state.content);
 
     this.props.navigation.goBack()
   }
@@ -45,7 +46,7 @@ class AddPost extends Component {
           </Card>
           <Button
             onPress={() => this.submit()}
-            style={{alignSelf: 'flex-end',marginTop:20,marginRight:15,paddingLeft:40,paddingRight:40,borderRadius:10,backgroundColor:"#96F49F",borderColor:"black",borderWidth:0.5}}  small>
+            style={{alignSelf: 'flex-end',marginTop:20,marginRight:15,padding:15,paddingLeft:40,paddingRight:40,borderRadius:3,backgroundColor:"#96F49F",borderColor:"black",borderWidth:0.5}}  small>
             <Text style={{fontSize:18,paddingBottom:22,color:'black',padding:0}}>Post</Text>
           </Button>
         </Content>
@@ -59,7 +60,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#4F6EFD',
     padding:10,
     borderRadius:10,
-    marginTop:15,
     marginLeft:10,
     marginRight:10,
     paddingBottom:25
@@ -67,4 +67,4 @@ const styles = StyleSheet.create({
 })
 
 
-export default AddPost;
+export default connect(null, { createPost })(AddPost)
