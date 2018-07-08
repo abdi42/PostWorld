@@ -1,17 +1,17 @@
 import React, { Component } from 'react';
 import { StyleSheet,TouchableOpacity,Text,View,KeyboardAvoidingView} from 'react-native';
 import Mapbox from '@mapbox/react-native-mapbox-gl';
-import { observer } from 'mobx-react';
 import { Row,Container, Header, Left, Body, Right, Icon, Button ,Title,Content,Card,CardItem,Form,Textarea,Fab} from 'native-base';
 import PostModal from '../../components/PostModal'
-import {observable} from "mobx"
 import { NavigationActions } from 'react-navigation'
-import PostCard from '../../components/PostCard';
+import Post from '../../components/Post'
+import { connect } from 'react-redux';
+import { fetchPosts } from '../../actions/postActions'
+import { postVote } from '../../actions/postActions'
+import Add from '../../components/Add'
+import ProfileImage from '../../components/ProfileImage'
+Mapbox.setAccessToken('pk.eyJ1IjoiYWJkaTQyIiwiYSI6ImNqaHNlZm9pYTAyM3kzcW15Y2kzdHd3N2kifQ.899OIbr__amO23qmSrRmyw');
 
-const OPostCard = observer(PostCard);
-Mapbox.setAccessToken('pk.eyJ1IjoiYWJkaTA5ODciLCJhIjoiY2pkaWFhaTgzMTcyZjJ3bjkwcDVmc3NnOCJ9.LtY3fCxcNNuuGQHXgsl6aA');
-
-@observer
 class MapScreen extends Component {
 
   constructor(props){
@@ -21,47 +21,55 @@ class MapScreen extends Component {
       modal:true,
       index:null,
       visible:false,
+      addVisible:false,
+      latitude:null,
+      longitude:null,
       error:null,
-      finishedLoadingMap:true
+      finishedLoadingMap:true,
+      data:[],
+      visible:false
     }
+
+    this.onSubmit = this.onSubmit.bind(this)
+  }
+
+  componentWillMount(){
+    this.props.fetchPosts();
   }
 
   componentDidMount(){
     this.getCurrentPosition()
-    this.props.screenProps.postStore.fetchPosts();
   }
 
   getCurrentPosition(){
     navigator.geolocation.getCurrentPosition(
       (position) => {
         this.setState({
-          latitude: parseInt(position.coords.latitude),
-          longitude: parseInt(position.coords.longitude),
+          latitude: parseFloat(position.coords.latitude),
+          longitude: parseFloat(position.coords.longitude),
           error: null,
         });
       },
-      (error) => this.setState({ error: error.message }),
+      (error) => console.log(error),
       { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
     );
   }
 
-  closePost(){
-
+  onSubmit(){
+    this.setState({addVisible:false})
   }
 
+
   renderAnnotations () {
-    const {postStore} = this.props.screenProps;
-
+    const posts = this.props.posts
     return (
-      postStore.posts.map((post,index) => {
-        if(post.geo.slice().length > 0 && this.state.finishedLoadingMap == true){
-          const post = postStore.posts[index];
-
+      posts.map((post,index) => {
+        if(post.geo.length > 0 && this.state.finishedLoadingMap == true){
           return (
             <Mapbox.PointAnnotation
               key={index}
               id='pointAnnotation'
-              coordinate={post.geo.slice()}>
+              coordinate={post.geo}>
 
               <TouchableOpacity
                 onPress={() => {
@@ -84,15 +92,12 @@ class MapScreen extends Component {
   }
 
   showPost(){
-    const {postStore} = this.props.screenProps;
-    const {posts} = postStore;
-    if(postStore.state == 'done' && this.state.index != null){
+    if(this.state.index != null){
       return (
-        <PostModal closePost={() => this.setState({visible:false})} visible={this.state.visible}>
-          <OPostCard
-            post={this.props.screenProps.postStore.getPost(this.state.index)}
-            onUpVote={() => postStore.upVote(this.state.index)}
-            onDownVote={() => postStore.downVote(this.state.index)}></OPostCard>
+        <PostModal closePost={() => this.setState({visible:false})} style={{top:75}} visible={this.state.visible} opacity={0}>
+          <Post
+            post={this.props.posts[this.state.index]}
+            geoDisabled={true}></Post>
         </PostModal>
       )
     }
@@ -102,27 +107,47 @@ class MapScreen extends Component {
     this.refs.modal.setModalVisible(true);
   }
 
-  addPost(content){
-
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        this.props.navigation.navigate('AddPost',{geo:[parseFloat(position.coords.longitude),parseFloat(position.coords.latitude)]})
-      },
-      (error) => this.setState({ error: error.message }),
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
-    );
+  showAddPost(content){
+    return (
+      <PostModal
+        closePost={() => this.setState({addVisible:false})}
+        style={{top:50}} visible={this.state.addVisible}>
+        <Add onSubmit={this.onSubmit} geo={[this.state.longitude,this.state.latitude]} navigate={this.props.navigation.navigate}></Add>
+      </PostModal>
+    )
 
   }
 
+  reCenter(){
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        this.setState({
+          latitude: parseFloat(position.coords.latitude),
+          longitude: parseFloat(position.coords.longitude),
+          error: null,
+        });
+        this.map.flyTo([parseFloat(position.coords.longitude),parseFloat(position.coords.latitude)],600)
+      },
+      (error) => console.log(error),
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 1000 },
+    );
+  }
+
   render() {
-    const { postStore } = this.props.screenProps;
-    const {posts} = postStore;
+    // const { postStore } = this.props.screenProps;
+    // const {posts} = postStore;
     const backAction = NavigationActions.back({
       key: null
     })
+
+    const backSample = NavigationActions.reset({
+      key: null,
+      index: 0,
+      actions: [NavigationActions.navigate({ routeName: 'SamplePage' })],
+    })
+
     const { params } = this.props.navigation.state;
     let geo = [this.state.longitude,this.state.latitude];
-
     if((params != undefined || params != null) & params.geo){
       geo = params.geo
     }
@@ -130,10 +155,12 @@ class MapScreen extends Component {
     return (
       <View style={styles.container}>
         <Mapbox.MapView
+                      styleURL="mapbox://styles/abdi42/cjhsge0rx7vyo2rp9kfssubsz?optimize=true"
             ref={(ref) => (this.map = ref)}
             userTrackingMode={Mapbox.UserTrackingModes.Follow}
-            styleURL="mapbox://styles/abdi0987/cjdkviz0003tn2snzce36tc64"
-            zoomLevel={19}
+            zoomLevel={18}
+            logoEnabled={false}
+            compassEnabled={false}
             centerCoordinate={params.geo}
             showUserLocation={true}
             style={styles.container}
@@ -141,17 +168,25 @@ class MapScreen extends Component {
             pitch={60}
             onDidFinishRenderingMapFully={() => this.setState({finishedLoadingMap:true})}
             >
-
             {this.renderAnnotations()}
-
             <View>
-              <TouchableOpacity style={{top:30,left:30}} onPress={() => this.props.navigation.dispatch(backAction)}>
-                <Icon style={{color:'white',fontSize:35}}name="ios-arrow-back"/>
+              <TouchableOpacity
+                style={{top:30,left:30,position:'absolute'}}
+                onPress={() => this.props.navigation.dispatch(backAction)}
+                hitSlop={{top: 10, bottom: 10, left: 20, right: 22}}>
+                <Icon style={{color:'white',fontSize:40}}name="md-arrow-round-back"/>
               </TouchableOpacity>
             </View>
 
             <TouchableOpacity
-              onPress={() => this.addPost()}
+              style={{bottom:20,left:30,position:'absolute'}}
+              onPress={this.reCenter.bind(this)}
+              hitSlop={{top: 10, bottom: 10, left: 20, right: 22}}>
+              <Icon style={{color:"white",fontSize:50}} name="md-locate" />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => this.setState({addVisible:true})}
               style={{width:80,height:80,alignSelf:'center',marginBottom:25,position:'absolute',bottom:0}}>
               <View
                  style={styles.roundedButton}>
@@ -159,8 +194,16 @@ class MapScreen extends Component {
               </View>
             </TouchableOpacity>
 
+            <TouchableOpacity
+              style={{bottom:20,right:30,position:'absolute'}}
+              onPress={() => this.props.navigation.navigate('SamplePage')}
+              hitSlop={{top: 10, bottom: 10, left: 20, right: 22}}>
+              <ProfileImage></ProfileImage>
+            </TouchableOpacity>
+
         </Mapbox.MapView>
         {this.showPost()}
+        {this.showAddPost()}
       </View>
     );
   }
@@ -172,12 +215,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   annotationContainer: {
-    width: 30,
-    height: 30,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'white',
-    borderRadius: 15,
+
   },
   roundedButton: {
     flex:1,
@@ -223,5 +261,12 @@ const styles = StyleSheet.create({
   }
 });
 
+const mapStateToProps = state => {
+  let storedPosts = state.posts.items.map(post => ({key:post.id, ...post}))
+  return {
+    posts: storedPosts,
+    newPost:state.posts.item
+  }
+}
 
-export default MapScreen;
+export default connect(mapStateToProps, { fetchPosts,postVote })(MapScreen);
