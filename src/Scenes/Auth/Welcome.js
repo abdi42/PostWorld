@@ -27,7 +27,7 @@ class Welcome extends React.Component {
           </Text>
           <Button
             style={{backgroundColor:"#A0F6A9",borderColor:"#979797",borderWidth:1,alignSelf:"center",marginTop:40,padding:0}}
-            onPress={() => this.props.navigation.navigate("App")}>
+            onPress={() => this.props.navigation.navigate("SignUp")}>
             <Text style={{color:'black',padding:0,fontSize:20,marginLeft:12.5,marginRight:12.5}}>Lets try it</Text>
           </Button>
         </Content>

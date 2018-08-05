@@ -7,7 +7,6 @@
 import React, { Component } from 'react';
 import AppNavigation from './AppNavigation.js'
 import { Root } from "native-base";
-
 import {
   Platform,
   StyleSheet,
@@ -24,7 +23,6 @@ type Props = {
 
 export default class App extends Component<Props> {
   render() {
-
 
     return (
       <Provider store={store}>

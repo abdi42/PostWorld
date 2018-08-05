@@ -1,7 +1,14 @@
 export const FETCH_POSTS = 'FETCH_POSTS'
-export const NEW_POST = 'NEW_POST'
-export const VOTE_POST = "VOTE_POST"
-export const GET_POST = "GET_POST"
-export const ADD_COMMENT = "ADD_COMMENT"
-export const VOTE_COMMENT = "VOTE_COMMENT"
-export const FETCH_COMMENTS = "FETCH_COMMENTS"
+export const FETCH_POSTS_SUCCESS = 'FETCH_POSTS_SUCCESS'
+export const FETCH_POSTS_FAILURE = 'FETCH_POSTS_FAILURE'
+
+export const ADD_POST = 'ADD_POST'
+export const POST_VOTE = 'POST_VOTE'
+export const GET_POST = 'GET_POST'
+export const ADD_COMMENT = 'ADD_COMMENT'
+export const COMMENT_VOTE = 'COMMENT_VOTE'
+export const SELECT_POST = 'FETCH_COMMENTS'
+export const VOTE_REQUEST = 'VOTE_REQUEST'
+export const ADD_REQUEST = 'ADD_REQUEST'
+export const ADD_POSTS = 'ADD_POSTS'
+export const GET_USER = 'GET_USER'

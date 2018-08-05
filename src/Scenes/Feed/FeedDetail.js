@@ -9,49 +9,98 @@ import {
   Keyboard,
   AsyncStorage
 } from 'react-native';
-import { Container,List,ListItem, Header, Title, Content, Card, CardItem, Thumbnail, Text, Button, Icon, Left, Body, Right,Footer,FooterTab,Form,Item,Input} from 'native-base';
+import { Container,List,ListItem, Header, Title, Content,Spinner, Card, CardItem, Thumbnail, Text, Button, Icon, Left, Body, Right,Footer,FooterTab,Form,Item,Input} from 'native-base';
 import PostCard from '../../components/PostCard'
 import KeyboardSpacer from 'react-native-keyboard-spacer';
 import CommentCard from '../../components/CommentCard';
 import { connect } from 'react-redux';
-import { addComment,commentVote,getPost } from '../../actions/postActions'
+import { addComment,commentVote,getPost,postVote } from '../../actions/postActions'
 import { NavigationActions } from 'react-navigation';
 import Post from '../../components/Post'
+import DismissKeyboard from 'dismissKeyboard';
+
+class InputForm extends Component {
+
+  constructor(props){
+    super(props);
+    this.state ={}
+
+    this.onChanged = this.onChanged.bind(this)
+    this.onAdd = this.onAdd.bind(this)
+  }
+
+  onChanged(comment) {
+    this.setState({comment})
+  }
+
+  onAdd(){
+    DismissKeyboard()
+
+    this.props.addComment(this.state.comment)
+    this.setState({comment:''})
+  }
+
+  render() {
+    return (
+      <FooterTab style={{backgroundColor:"#E7ECF0"}}>
+        <Input style={{backgroundColor:'white',borderRadius:5,marginLeft:15,marginTop:7,marginRight:25,height:40}}  placeholder='Add a comment' onSubmitEditing={this.onAdd}  onChangeText={this.onChanged}>{this.state.comment}</Input>
+        <TouchableOpacity
+          transparent
+          hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}
+          vertical
+          onPress={this.onAdd}>
+          <Icon active name='ios-arrow-forward-outline' style={{color:"#4589F3",marginTop:10,marginRight:20}}/>
+        </TouchableOpacity>
+      </FooterTab>
+    )
+  }
+}
 
 class FeedDetail extends Component {
 
   constructor(props){
     super(props);
-    this.state ={ comment:''}
+    this.state ={ post: null }
+    this._header = this._header.bind(this);
+    this.onChanged = this.onChanged.bind(this)
+    this.addComment = this.addComment.bind(this)
+    this.onCommentVote = this.onCommentVote.bind(this)
   }
 
   componentWillMount(){
+    const { params } = this.props.navigation.state;
     const setParamsAction = NavigationActions.setParams({
       params: {hideTabBar: true}
     });
     this.props.navigation.dispatch(setParamsAction);
   }
 
-  componentWillReceiveProps(nextProps){
-    if(nextProps.post){
-      this.props.post.comments = nextProps.post.comments
-    }
+  onCommentVote(commentId,dir){
+    this.props.commentVote(this.props.post.id,commentId,dir)
   }
 
-  componentWillMount(){
-    const { params } = this.props.navigation.state;
-    this.props.getPost(params.postId)
-  }
+  _keyExtractor(item){
+    return item
+  };
 
   renderPost(){
-    if(this.props.post.id){
+    const { params } = this.props.navigation.state;
+    if(this.props.post && this.props.post.comments){
       return (
         <FlatList
-          data={this.props.post.comments}
+          ref={(ref) => { this.flatListRef = ref }}
+          data={this.props.post.comments.allIds}
           renderItem={this._renderComment.bind(this)}
           initialNumToRender={4}
           ListHeaderComponent={this._header.bind(this)}
+          keyExtractor={this._keyExtractor}
           />
+      )
+    } else {
+      return (
+        <View style={styles.body}>
+          <Spinner color='black' />
+        </View>
       )
     }
   }
@@ -62,51 +111,60 @@ class FeedDetail extends Component {
     const post = params.post
 
     return (
-      <View style={{backgroundColor:"#E7ECF0",paddingBottom:5}}>
-        <Post post={this.props.post} navigation={this.props.navigation} style={{}}></Post>
+      <View style={{flex:1,backgroundColor:"#E7ECF0",paddingBottom:5}}>
+        {
+          <PostCard
+            style={{margin:0}}
+            post={this.props.post}
+            geoDisabled={this.props.post.map}
+            goToGeo={() => this.props.navigation.navigate('MapScreen',{geo:this.props.post.geo.coordinates,prevPost:this.props.post._id})}
+            onVote={this.props.postVote}>
+
+          </PostCard>
+				}
       </View>
     )
   }
 
-  commentVote(post,dir,item){
-    AsyncStorage.getItem('userToken',(err,result) => {
-      if(result == null){
-        this.props.navigation.navigate("Prompt")
-      } else {
-        this.props.commentVote(post,dir,item)
-      }
-    })
+  commentVote(post,dir,index,comment,commentIndex){
+    if(comment.votes.length > 0){
+      return
+    }
+    this.props.commentVote(post,dir,index,comment,commentIndex)
   }
 
   _renderComment = ({item,index}) => {
     const { params } = this.props.navigation.state;
-    const post = params.post
+    const post = this.props.post
+    const comment = this.props.post.comments.byId[item];
 
     return (
       <CommentCard
-        comment={item}
-        onUpVote={() => this.commentVote(post,"up",item)}
-        onDownVote={() => this.commentVote(post,"down",item)}></CommentCard>
+        key={item}
+        comment={comment}
+        onVote={this.onCommentVote}></CommentCard>
     )
   }
 
-  addComment(index){
-    AsyncStorage.getItem('userToken',(err,result) => {
-      if(result == null){
-        this.props.navigation.navigate("Prompt")
-      } else {
-        const { params } = this.props.navigation.state;
-        const post = params.post
+  addComment(content){
+    const { params } = this.props.navigation.state;
+    const post = params.post
 
-        const comment = this.state.comment;
+    const comment = content;
 
-        this.props.addComment("John Doe",comment,post)
+    const allIds = this.props.post.comments.allIds
+    let lastIndex = this.props.post.comments.allIds.length
 
-        this._textInput.setNativeProps({text: ''});
+    if(lastIndex > 0)
+      lastIndex -= 1
 
-        Keyboard.dismiss();
-      }
+    this.props.addComment("John Doe",comment,post,content,() => {
+      this.flatListRef.scrollToIndex({animated: true,index:lastIndex,viewPosition:0.75})
     })
+  }
+
+  onChanged(comment) {
+    this.setState({comment})
   }
 
   render(){
@@ -131,20 +189,11 @@ class FeedDetail extends Component {
           </Body>
           <Right/>
         </Header>
-        <Content style={{backgroundColor:"#fff"}}>
+        <View style={{flex:1}}>
           {this.renderPost()}
-        </Content>
+        </View>
         <Footer>
-          <FooterTab style={{backgroundColor:"#E7ECF0"}}>
-            <Input style={{backgroundColor:'white',borderRadius:5,marginLeft:15,marginTop:7,marginRight:25,height:40}}  ref={component => this._textInput = component} placeholder='Add a comment' value={this.state.comment} onSubmitEditing={() => this.addComment(index)}  onChangeText={(comment) => this.setState({comment})}/>
-            <TouchableOpacity
-              transparent
-              hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}
-              vertical
-              onPress={() => this.addComment(index)}>
-              <Icon active name='ios-arrow-forward-outline' style={{color:"#4589F3",marginTop:10,marginRight:20}}/>
-            </TouchableOpacity>
-          </FooterTab>
+          <InputForm addComment={this.addComment}></InputForm>
         </Footer>
         <KeyboardSpacer/>
       </Container>
@@ -152,8 +201,22 @@ class FeedDetail extends Component {
   }
 }
 
-const mapStateToProps = state => ({
-  post: state.posts.item
+
+const styles = StyleSheet.create({
+  body: {
+    flex:1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding:25,
+  }
 })
 
-export default connect(mapStateToProps, { addComment,commentVote,getPost })(FeedDetail)
+const mapStateToProps = state => {
+
+  return {
+    post: state.posts.byId[state.posts.item],
+    isFetching: state.posts.isFetching
+  }
+}
+
+export default connect(mapStateToProps, { addComment,commentVote,getPost,postVote })(FeedDetail)

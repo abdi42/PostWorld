@@ -13,7 +13,7 @@ export default class Modal extends Component {
   render() {
     return (
       <View style={{ flex: 1,padding:25}}>
-        <ReactModal style={{backgroundColor:"#617AF5",flex:3}} isVisible={this.state.isModalVisible} backdropOpacity={0.0}>
+        <ReactModal style={{backgroundColor:"#617AF5",flex:3}} isVisible={this.state.isModalVisible} hideModalContentWhileAnimating={true} backdropOpacity={0.0}>
           <View style={{ flex: 1 }}>
             <Text>Hello!</Text>
             <TouchableOpacity onPress={this._toggleModal}>

@@ -20,7 +20,7 @@ class FeedView extends Component {
         <View>
           <PostCard
             post={post}
-            goToGeo={() => this.props.navigate("MapScreen",{geo:post.geo})}
+            goToGeo={() => this.props.navigate("MapScreen",{geo:post.geo.coordinates})}
             onUpVote={() => {}}
             onDownVote={() => {}}>
           </PostCard>

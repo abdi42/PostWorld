@@ -23,7 +23,7 @@ class SignUp extends React.Component {
 
   signUp(){
     this.setState({submitted:true})
-    fetch('https://faker-abdi42.c9users.io/users/signup',{
+    fetch('http://localhost:3000/users',{
       method:'POST',
       headers: {
         Accept: 'application/json',
@@ -31,23 +31,21 @@ class SignUp extends React.Component {
         'Access-Control-Allow-Origin': '*'
       },
       body:JSON.stringify({
-        username:this.state.username
+        handle:this.state.username
       })
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log(responseJson)
-      if(responseJson.error !== null){
-        this.setState({submitted:false,msg:responseJson.error})
-      } else {
-        this.setState({success:true,msg:'Cool! You got this! \n \n \n Now just enter your number below so we can verify that this is you with two-factor authentication.'})
-      }
+      AsyncStorage.setItem('userToken',JSON.stringify(responseJson.user),(error) => {
+        this.props.navigation.navigate('ImageUpload',{username:responseJson.user.username,userId:responseJson.user._id})
+      })
     })
+
   }
 
   verifyTwoFactor(){
     this.setState({twoFactorSubmitted:true})
-    fetch('https://faker-abdi42.c9users.io/users/twofactor',{
+    fetch('http://localhost:3000/users/twofactor',{
       method:'POST',
       headers: {
         Accept: 'application/json',
@@ -55,23 +53,21 @@ class SignUp extends React.Component {
         'Access-Control-Allow-Origin': '*'
       },
       body:JSON.stringify({
-        username:this.state.username,
+        handle:this.state.username,
         token:this.state.token
       })
     })
     .then((response) => response.json())
     .then((responseJson) => {
-      console.log(responseJson)
-      if(responseJson.error !== null){
+      if(responseJson.error){
         this.setState({twoFactorSubmitted:false,msg:responseJson.error})
       } else {
         this.setState({twoFactorSubmitted:true})
         AsyncStorage.setItem('userToken',JSON.stringify(responseJson.user),(error) => {
-          console.log(error)
           if(error){
             this.setState({success:false},msg:"Something went wrong")
           } else {
-            this.props.navigation.navigate('ImageUpload',{username:responseJson.user.username})
+            this.props.navigation.navigate('ImageUpload',{username:responseJson.user.username,userId:responseJson.user._id})
           }
         })
       }
@@ -80,7 +76,7 @@ class SignUp extends React.Component {
 
 
   sendCode(){
-    fetch('https://faker-abdi42.c9users.io/users/sendCode',{
+    fetch('http://localhost:3000/users/sendCode',{
       method:'POST',
       headers: {
         Accept: 'application/json',
@@ -88,7 +84,7 @@ class SignUp extends React.Component {
         'Access-Control-Allow-Origin': '*'
       },
       body:JSON.stringify({
-        username:this.state.username,
+        handle:this.state.username,
         phoneNumber:this.state.number,
       })
     })

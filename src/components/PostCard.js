@@ -1,98 +1,149 @@
-import React, { Component } from 'react';
+import React, { Component,PureComponent } from 'react'
 import {
-  Platform,
-  StyleSheet,
-  View,
-  Image,
-  TouchableOpacity
-} from 'react-native';
-import { Container,List,ListItem, Header, Title, Content, Card, CardItem, Thumbnail, Text, Button, Icon, Left, Body, Right } from 'native-base';
+	StyleSheet,
+	Image,
+	TouchableOpacity
+} from 'react-native'
+
+import PropTypes from 'prop-types'
+import { Thumbnail, Icon, Left, ActionSheet,Body, Right } from 'native-base'
+import { Card,CardItem } from './common/Card'
+import Text from '@common/Text'
+import Vote from '@common/Vote'
+import theme from '@common/colors.js'
+
+class BaseThumbnail extends Component{
+	shouldComponentUpdate() {
+		return false
+	}
+
+	render() {
+		return (
+			<Thumbnail source={{uri: this.props.uri}} small/>
+		)
+	}
+}
+
+BaseThumbnail.propTypes = {
+	uri:PropTypes.string
+}
+
+
+var BUTTONS = ['Tweet post', 'Cancel']
+var TWEET_INDEX = 0
+var CANCEL_INDEX = 1
 
 class PostCard extends Component {
 
-  isGeoPost(post){
-    if(post.geo.length > 0 && !this.props.geoDisabled){
-      return (
-        <Button small transparent style={{paddingBottom:0}} onPress={() => this.props.goToGeo()} hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}>
-          <Image source={require('../resources/earth-globe.png')} style={{width:20,height:20}} />
-        </Button>
-      )
-    }
-  }
+	constructor(props){
+		super(props)
+		this.vote = this.vote.bind(this)
+	}
 
+	shouldComponentUpdate(nextProps) {
+		return this.props.post.voteCount !== nextProps.post.voteCount
+	}
 
-  render(){
-    const uri = "https://facebook.github.io/react-native/docs/assets/favicon.png";
-    const { post } = this.props;
-    let votesMargin = 0;
+	vote(dir){
 
-    if(post.votes.length < 10){
-      votesMargin = 5;
-    }
-    else {
-      votesMargin = 1;
-    }
+		const { post } = this.props
 
-    return (
-      <View style={styles.card}>
-        <CardItem style={{paddingTop:0,paddingBottom:0}} >
-          <Left>
-            <Thumbnail source={{uri: post.image}} small/>
-            <Body>
-              <Text style={{fontFamily:"Helvetica Neue",fontWeight:"bold"}}>{post.username}</Text>
-            </Body>
-            <Right >
-              <TouchableOpacity
-                transparent
-                hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}
-                onPress={this.props.onUpVote}
-                vertical>
-                <Icon active type="FontAwesome" name="caret-up" style={{fontSize:30,lineHeight:0,letterSpacing:0,color: post.userVoted === "up" ? "#2ecc71" : "#AAAAAA"}} />
-              </TouchableOpacity>
-              <Text style={{marginRight:0,fontSize:12.5,fontWeight:"bold"}}>{post.voteCount}</Text>
-              <TouchableOpacity
-                transparent
-                hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}
-                onPress={this.props.onDownVote}
-                vertical>
-                <Icon active type="FontAwesome" name="caret-down" style={{fontSize:30,lineHeight:0,letterSpacing:0,color: post.userVoted === "down" ? "#2ecc71" : "#AAAAAA"}} />
-              </TouchableOpacity>
-            </Right>
-          </Left>
-        </CardItem>
-        <CardItem style={{backgroundColor:"#fff",paddingTop:0,paddingBottom:0}}>
-          <Body>
-            <Text style={{fontFamily:"Helvetica Neue",fontSize:15}}>{post.content}</Text>
-          </Body>
-        </CardItem>
-        <CardItem style={{backgroundColor:"#fff",flex: 1, flexShrink:1, flexDirection: 'row', alignItems:'center', justifyContent: 'space-between',paddingTop:0,paddingBottom:0}} footer >
-          <Text style={{color:"#7f8c8d",fontSize:14}}>{post.time} - {post.distance}</Text>
-          {this.isGeoPost(post)}
-          <Icon name="ios-more" style={{textAlign:'center',paddingTop:6}} hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}></Icon>
-          <Text style={{paddingLeft:8,color:"#AAAAAA",fontSize:15}}>{post.comments.length} replies</Text>
-        </CardItem>
-      </View>
-  )
-  }
+		this.props.onVote(post.id,dir)
+	}
+
+	showActionSheet(){
+		ActionSheet.show(
+			{
+				options: BUTTONS,
+				cancelButtonIndex: CANCEL_INDEX,
+				title: 'Share'
+			},
+			buttonIndex => {}
+		)
+	}
+
+	render() {
+		const { post } = this.props
+
+		let mapButton = null
+
+		if(post.map === true && !this.props.geoDisabled){
+			mapButton = (
+				<TouchableOpacity style={styles.noPadding} onPress={() => this.props.goToGeo()} hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}>
+					<Image source={require('./logo.png')} style={styles.image} />
+				</TouchableOpacity>
+			)
+		}
+
+		return (
+			<Card >
+				<CardItem>
+					<Left>
+						<BaseThumbnail uri={post.user.image}></BaseThumbnail>
+						<Body>
+							<Text bold>{post.user.handle}</Text>
+						</Body>
+						<Right >
+							<Vote onDownVote={this.vote} onUpVote={this.vote} voteCount={post.voteCount} votes={post.votes}></Vote>
+						</Right>
+					</Left>
+				</CardItem>
+				<CardItem>
+					<Body>
+						<Text>{post.content}</Text>
+					</Body>
+				</CardItem>
+				<CardItem style={styles.card} footer >
+					<Text subdue size={14}>{post.time} - {post.distance}</Text>
+					{mapButton}
+					<TouchableOpacity style={styles.noPadding} onPress={this.showActionSheet} hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}>
+						<Icon name="ios-more" style={styles.icon} hitSlop={{top: 10, bottom: 10, left: 15, right: 15}}></Icon>
+					</TouchableOpacity>
+					<Text style={styles.text}>{post.replies} replies</Text>
+				</CardItem>
+			</Card>
+		)
+	}
 }
 
+
+PostCard.propTypes = {
+	post:PropTypes.object,
+	geoDisabled:PropTypes.bool,
+	goToGeo:PropTypes.func,
+	onVote:PropTypes.func
+}
+
+
 const styles = StyleSheet.create({
-  buttons:{
-    flex:1,
-    flexDirection: 'row'
-  },
-  card: {
-    marginVertical: 0.5,
-    marginHorizontal: 0.5,
-    flex: 1,
-    borderWidth: 1.5,
-    borderRadius: 10,
-    borderColor: "#ccc",
-    flexWrap: "nowrap",
-    backgroundColor: "#fff",
-    elevation: 3,
-    padding:5
-  }
+	card:{
+		backgroundColor:theme.white,
+		flex: 1,
+		flexShrink:1,
+		flexDirection: 'row',
+		alignItems:'center',
+		justifyContent: 'space-between',
+		paddingTop:0,
+		paddingBottom:0,
+		margin:0
+	},
+	text:{
+		paddingLeft:8,
+		color:theme.grey,
+		fontSize:15
+	},
+	icon:{
+		textAlign:'center',
+		paddingTop:6
+	},
+	noPadding:{
+		paddingBottom:0
+	},
+	image:{
+		width:20,
+		height:20
+	}
 })
 
-export default PostCard;
+
+export default PostCard

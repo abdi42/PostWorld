@@ -17,34 +17,46 @@ class ImageUpload extends React.Component {
   selectImage(){
     const { params } = this.props.navigation.state;
 
-    ActionSheet.show(
-      {
-        options: BUTTONS,
-        cancelButtonIndex: CANCEL_INDEX,
-        title: "Select profile photo"
-      },
-      buttonIndex => {
-        fetch('https://faker-abdi42.c9users.io/users/updateImage',{
+    var options = {
+      title: 'Select Avatar',
+      storageOptions: {
+        skipBackup: true,
+        path: 'images'
+      }
+    };
+
+    ImagePicker.showImagePicker(options, (response) => {
+      
+
+      if (response.didCancel) {
+        
+      }
+      else if (response.error) {
+        
+      }
+      else if (response.customButton) {
+        
+      }
+      else {
+        const data = new FormData();
+        data.append('image',{
+          uri:response.uri,
+          type:'image/jpeg',
+          name:response.fileName,
+        })
+
+        fetch('http://localhost:3000/users/'+params.userId+'/image',{
           method:'POST',
-          headers: {
-            Accept: 'application/json',
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
-          },
-          body:JSON.stringify({
-            username:params.username,
-            image:"https://randomuser.me/api/portraits/men/1.jpg"
-          })
+          body:data
         })
         .then((response) => response.json())
         .then((responseJson) => {
-          console.log(responseJson)
-          AsyncStorage.setItem('userToken',JSON.stringify(responseJson.user),(error) => {
+          AsyncStorage.setItem('userToken',JSON.stringify(responseJson),(error) => {
             this.props.navigation.navigate('Tabs')
           })
         })
       }
-    )
+    });
   }
 
   render () {

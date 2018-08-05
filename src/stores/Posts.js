@@ -1,3 +1,28 @@
+import {observable,action,configure,runInAction,autorun,spy} from "mobx"
+//configure({ enforceActions: true });
+import HttpApi from './HttpApi'
+
+const httpApi = new HttpApi();
+
+
+
+class Middleware {
+  use(fn) {
+    this.go = (stack => next => stack(fn.bind(this, next.bind(this))))(this.go);
+  }
+
+  go = next => next();
+}
+
+var middleware = new Middleware();
+
+_storePosts = async (posts) => {
+  try {
+    await AsyncStorage.setItem('POSTS',posts);
+  } catch (error) {
+    // Error saving data
+  }
+}
 
 class PostStore {
   @observable posts = []
@@ -9,33 +34,99 @@ class PostStore {
 
   @observable state = 'pending';
 
-  fetchPosts () {
+  constructor(){
+  }
+
+  fetchPosts (userId) {
     if(this.posts.length > 0){
       return
     }
 
     this.state = 'done';
 
-    fetch('https://faker-abdi42.c9users.io/api/posts')
-    .then((response) => {
-      response.json().then((json) => {
-        this.posts = json;
-        this.state = 'done';
+    fetch('http://localhost:3000/posts/feed',{
+      method:'POST',
+      headers:{
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body:JSON.stringify({
+        latitude:41.255130,
+        longitude:-96.019380,
+        userId:userId
       })
     })
+      .then(res => res.json())
+      .then((posts) => {
+        posts.sort((a,b) => {
+          a.commentsLoaded = false;
+          b.commentsLoaded = false;
+
+          var dateA = new Date(a.createdAt)
+          var dateB = new Date(b.createdAt)
+
+          return dateB - dateA;
+        })
+
+        this.posts = posts;
+      })
+
   }
 
-  @action addPost(post,geo = []) {
-    this.posts.unshift({
-      username:"johndoe",
-      content:post,
+  @action getComments(index) {
+    httpApi.getComments(this.posts[index]._id)
+      .then(comments => {
+        this.posts[index].comments = comments;
+        this.posts[index].commentsLoaded = true
+      });
+  }
+
+  @action addPost(postContent,geo = [],user) {
+
+    const post = {
+      id:uuidv4(),
+      username:user.handle,
+      content:postContent,
       likes:0,
       distance:"Here",
       comments:[],
       votes:[],
-      voteCount:0,
-      geo:geo
+      geo:geo,
+      time:"Now",
+      image:user.image
+    }
+
+    fetch('http://localhost:3000/posts',{
+      method:'POST',
+      headers:{
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body:JSON.stringify({
+        latitude:41.255130,
+        longitude:-96.019380,
+        content:postContent,
+        userId:user._id
+      })
     })
+    .then(res => res.json())
+    .then((response) => {
+
+
+
+      AsyncStorage.getItem('POSTS',(err,result) => {
+        if(result !== null) {
+          var posts = JSON.parse(result);
+
+          this.posts.unshift(post);
+
+          _storePosts(JSON.stringify([response.savedPost,...posts]))
+        }
+      })
+
+    })
+
+
   }
 
   @action upVote(index){
@@ -80,6 +171,30 @@ class PostStore {
     }
   }
 
+  @action vote(index,dir,userId) {
+    const orginalDir = dir;
+    var postDir = 0
+
+    if(this.posts[index].votes.length > 0){
+      return
+    }
+
+    return httpApi.votePost(this.posts[index]._id,userId,dir)
+      .then(responseJson => {
+        switch (dir) {
+          case 1:
+            this.posts[index].voteCount +=1
+            break;
+          case -1:
+            this.posts[index].voteCount -=1
+            break;
+        }
+
+        this.posts[index].votes = [responseJson]
+      })
+
+  }
+
   @action addComment(index,username,comment){
     this.posts[index].comments.unshift({
       username:username,
@@ -88,8 +203,11 @@ class PostStore {
     })
   }
 
-  getPost(index){
-    return this.posts[index];
+
+
+  @action
+  loadComments = (comments,index) => {
+    this.posts[index].content = "ello world";
   }
 
   upVoted(username,post){

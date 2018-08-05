@@ -1,193 +1,194 @@
-import { FETCH_POSTS, NEW_POST,VOTE_POST,ADD_COMMENT,VOTE_COMMENT,GET_POST } from '../actions/types'
+import { FETCH_POSTS, FETCH_POSTS_SUCCESS, FETCH_POSTS_FAILURE, ADD_POST,POST_VOTE,ADD_POSTS,ADD_COMMENT,COMMENT_VOTE,GET_POST,SELECT_POST,ADD_REQUEST } from '../actions/types'
 
 function updateObject(oldObject, newValues) {
-    // Encapsulate the idea of passing a new object as the first parameter
-    // to Object.assign to ensure we correctly copy data instead of mutating
-    return Object.assign({}, oldObject, newValues);
-}
-function updateItemInArray(array, itemId, updateItemCallback) {
-    const updatedItems = array.map(item => {
-        if(item.id !== itemId) {
-            return item;
-        }
-        const updatedItem = updateItemCallback(item);
-        return updatedItem;
-    });
-    return updatedItems;
+	return Object.assign({}, oldObject, newValues)
 }
 
 
 const initialState = {
-  items: [],
-  item: {}
+	byId:{},
+	allIds:[],
+	item: {},
+	loading:false,
+	error:null
 }
 
 
-function singlePost(state =[],action){
-  switch(action.type){
-    case VOTE_COMMENT:
-      return state.comments.map((comment) => {
-        if(comment.id === action.payload.comment.id && comment.userVoted == null){
-          if(action.payload.dir === "down"){
-            return Object.assign({},comment,{
-              userVoted:"down",
-              votes:comment.votes +1
-            })
-          }
-          else {
-            return Object.assign({},comment,{
-              userVoted:"up",
-              votes:comment.votes -1
-            })
-          }
-        }
+function commentVote(state,action){
+	var dir = action.payload.dir
 
-        return comment
-      })
-    default:
-      return state
-  }
+	var voteObj  = {
+		userId:action.payload.userId,
+		dir:action.payload.dir
+	}
+
+	return {
+		...state,
+		voteCount: state.voteCount + dir,
+		votes: [voteObj]
+	}
 }
 
-export default function(state = initialState,action) {
-  switch(action.type) {
-    case FETCH_POSTS:
-      return {
-        ...state,
-        items:action.payload,
-        item:{
-          comments:[]
-        }
-      }
-    case NEW_POST:
-      return {
-        ...state,
-        items: [action.payload,...state.items],
-        item:{}
-      }
-    case VOTE_POST:
-      let updatePost = action.payload.post;
-      const dir = action.payload.dir
-      return {
-        ...state,
-        items:state.items.map((post) => {
-
-          if(post.id === updatePost.id){
-            var didVote = dir === "up" ? downVoted : upVoted
-            if(didVote('johndoe',updatePost) === false){
-              post.votes.push({
-                postId:updatePost.id,
-                username:'johndoe',
-                upVoted:(dir === "up" ? true : false),
-              })
-
-              post.userVoted = dir
-
-              if(dir === "up")
-                post.voteCount+=1;
-              else
-                post.voteCount-=1;
-            }
-          }
-
-          return post
-        }),
-        item:{
-          ...state.item,
-          comments:[...state.item.comments]
-        },
-      }
-    case ADD_COMMENT:
-      const comment = action.payload.comment
-      const username = action.payload.username
-      var data = {
-        username,
-        content:comment,
-        votes:0
-      }
-      return {
-        ...state,
-        items:state.items.map((post) => {
-          if(post.id == action.payload.post.id){
-            post.comments.unshift(data)
-          }
-
-          return post
-        }),
-        item:{
-          ...state.item,
-          comments:[...state.item.comments]
-        },
-      }
-    case VOTE_COMMENT:
-      return {
-        ...state,
-        items:state.items.map((post) => {
-          if(post.id !== action.payload.post.id) {
-            return post
-          }
-
-          return Object.assign({},post,{
-            comments: singlePost(post,action)
-          })
-        }),
-        item:{
-          ...state.item,
-          comments:state.item.comments.map((comment) => {
-            if(comment.id === action.payload.comment.id && comment.userVoted == null){
-              if(action.payload.dir === "down"){
-                return Object.assign({},comment,{
-                  userVoted:"down",
-                  votes:comment.votes -1
-                })
-              }
-              else {
-                return Object.assign({},comment,{
-                  userVoted:"up",
-                  votes:comment.votes +1
-                })
-              }
-            }
-
-            return comment
-          })
-        }
-      }
-    case GET_POST:
-      return {
-        ...state,
-        item: state.items.find((post) => {
-          if(post.id === action.payload.postId){
-            return post
-          }
-        })
-      }
-    default:
-      return state;
-  }
+function comment (state =[],action){
+	switch(action.type){
+	case COMMENT_VOTE:
+		return commentVote(state,action)
+	default:
+		return state
+	}
 }
 
 
-function upVoted(username,post){
-  var voted = false;
-
-  post.votes.map(vote => {
-    if(vote.username === username){
-      voted = true;
-    }
-  })
-
-  return voted;
+function getPost(state,action){
+	return updateObject(state,{
+		comments:{
+			byId:action.payload.comments.entities.comments,
+			allIds:action.payload.comments.result
+		},
+		isFetching:false
+	})
 }
 
-function downVoted(username,post){
-  var voted = false;
+function postVote(state,action){
 
-  post.votes.map(vote => {
-    if(vote.username === username && !vote.upVoted){
-      voted = true;
-    }
-  })
+	var dir = action.payload.dir
 
-  return voted;
+	var voteObj  = {
+		userId:action.payload.userId,
+		dir:action.payload.dir
+	}
+
+
+	return updateObject(state,{
+		voteCount: state.voteCount + dir,
+		votes: [voteObj]
+	})
+}
+
+function addComment(state,action){
+	var id = action.payload.comment.result
+	var comment = action.payload.comment.entities.comments
+
+	return updateObject(state,{
+		comments:{
+			byId:{
+				...state.comments.byId,
+				[id]:comment[id],
+			},
+			allIds:[...state.comments.allIds,id]
+		},
+	})
+}
+
+
+
+function post (state =[],action){
+	switch(action.type){
+	case ADD_COMMENT:
+		return addComment(state,action)
+	case POST_VOTE:
+		return postVote(state,action)
+	case GET_POST:
+		return getPost(state,action)
+	case COMMENT_VOTE:
+		return {
+			...state,
+			comments:{
+				...state.comments,
+				byId:{
+					...state.comments.byId,
+					[action.payload.commentId]: comment(state.comments.byId[action.payload.commentId],action)
+				}
+			}
+		}
+
+	default:
+		return state
+	}
+}
+
+function fetchPosts(state,action) {
+	return {
+		...state,
+		byId:action.payload.posts.entities.posts,
+		allIds:action.payload.posts.result,
+		item:{},
+		currentItem:null,
+		isFetching:false,
+		user:action.payload.user,
+		loading:false
+	}
+}
+
+function addPosts(state,action) {
+	return {
+		...state,
+		byId:{
+			...state.byId,
+			...action.payload.entities.posts
+		},
+		allIds:[...state.allIds,...action.payload.result],
+		item:{
+			comments:[]
+		},
+		currentItem:null,
+		isFetching:false
+	}
+}
+
+function addPost(state,action) {
+	return {
+		...state,
+		byId:{
+			...state.byId,
+			...action.payload.entities.posts
+		},
+		allIds:[action.payload.result,...state.allIds],
+		postRequest:false,
+		item:null
+	}
+
+}
+
+export default function(state = initialState ,action) {
+	switch(action.type) {
+	case ADD_REQUEST:
+		return {
+			...state,
+			postRequest:true
+		}
+	case FETCH_POSTS_SUCCESS: return fetchPosts(state,action)
+	case FETCH_POSTS:
+		return {
+			...state,
+			loading:true
+		}
+	case FETCH_POSTS_FAILURE:
+		return {
+			...state,
+			error:{
+				message:'Sorry about this! We could not load the data'
+			}
+		}
+	case ADD_POSTS: return addPosts(state,action)
+	case ADD_POST: return addPost(state,action)
+	case SELECT_POST:
+		return {
+			...state,
+			item:action.payload.id
+		}
+	case COMMENT_VOTE:
+	case ADD_COMMENT:
+	case POST_VOTE:
+	case GET_POST:
+		return {
+			...state,
+			byId:{
+				...state.byId,
+				[action.payload.id]: post(state.byId[action.payload.id],action)
+			}
+		}
+	default:
+		return state
+	}
 }
